@@ -73,7 +73,7 @@ class _MainNavigationScreenState extends State<MainNavigationScreen> {
     final List screens = [
       DashboardTab(transactions: transactions),
       TransactionsTab(transactions: transactions),
-      const StatisticsTab(),
+      StatisticsTab(transactions: transactions), // Truyền danh sách vào màn hình Thống kê
     ];
 
     return Scaffold(
@@ -288,11 +288,27 @@ class TransactionsTab extends StatelessWidget {
   }
 }
 
+// 3. Tab Thống kê động dựa trên dữ liệu thật
 class StatisticsTab extends StatelessWidget {
-  const StatisticsTab({super.key});
+  final List transactions;
+  const StatisticsTab({super.key, required this.transactions});
 
   @override
   Widget build(BuildContext context) {
+    // Tính toán tổng thu và tổng chi dựa trên danh sách giao dịch
+    double totalIncome = 0;
+    double totalExpense = 0;
+
+    for (var tx in transactions) {
+      String rawAmount = tx['amount'].toString().replaceAll(RegExp(r'[^0-9]'), '');
+      double val = double.tryParse(rawAmount) ?? 0;
+      if (tx['isIncome'] == true) {
+        totalIncome += val;
+      } else {
+        totalExpense += val;
+      }
+    }
+
     return Scaffold(
       appBar: AppBar(
         backgroundColor: Colors.white,
@@ -311,25 +327,25 @@ class StatisticsTab extends StatelessWidget {
                 borderRadius: BorderRadius.circular(16),
                 border: Border.all(color: Colors.grey.shade200),
               ),
-              child: const Column(
+              child: Column(
                 children: [
-                  Text('Tổng quan tháng này', style: TextStyle(color: Colors.grey, fontWeight: FontWeight.bold)),
-                  SizedBox(height: 12),
+                  const Text('Tổng quan tháng này', style: TextStyle(color: Colors.grey, fontWeight: FontWeight.bold)),
+                  const SizedBox(height: 12),
                   Row(
                     mainAxisAlignment: MainAxisAlignment.spaceAround,
                     children: [
                       Column(
                         children: [
-                          Text('Thu nhập', style: TextStyle(color: Colors.green)),
-                          SizedBox(height: 4),
-                          Text('8.000.000 đ', style: TextStyle(fontWeight: FontWeight.bold, fontSize: 16, color: Colors.green)),
+                          const Text('Thu nhập', style: TextStyle(color: Colors.green)),
+                          const SizedBox(height: 4),
+                          Text('$totalIncome đ', style: const TextStyle(fontWeight: FontWeight.bold, fontSize: 16, color: Colors.green)),
                         ],
                       ),
                       Column(
                         children: [
-                          Text('Chi tiêu', style: TextStyle(color: Colors.red)),
-                          SizedBox(height: 4),
-                          Text('3.000.000 đ', style: TextStyle(fontWeight: FontWeight.bold, fontSize: 16, color: Colors.red)),
+                          const Text('Chi tiêu', style: TextStyle(color: Colors.red)),
+                          const SizedBox(height: 4),
+                          Text('$totalExpense đ', style: const TextStyle(fontWeight: FontWeight.bold, fontSize: 16, color: Colors.red)),
                         ],
                       ),
                     ],
@@ -338,16 +354,31 @@ class StatisticsTab extends StatelessWidget {
               ),
             ),
             const SizedBox(height: 24),
-            const Expanded(
-              child: Center(
-                child: Column(
-                  mainAxisAlignment: MainAxisAlignment.center,
-                  children: [
-                    Icon(Icons.pie_chart_outline, size: 80, color: Colors.blue),
-                    SizedBox(height: 16),
-                    Text('Biểu đồ phân tích chi tiêu theo danh mục', style: TextStyle(color: Colors.grey, fontSize: 14)),
-                  ],
-                ),
+            const Align(
+              alignment: Alignment.centerLeft,
+              child: Text('Danh sách phân tích chi tiết', style: TextStyle(fontSize: 16, fontWeight: FontWeight.bold)),
+            ),
+            const SizedBox(height: 12),
+            Expanded(
+              child: transactions.isEmpty
+                  ? const Center(child: Text('Chưa có dữ liệu thống kê'))
+                  : ListView.builder(
+                itemCount: transactions.length,
+                itemBuilder: (context, index) {
+                  final tx = transactions[index];
+                  return ListTile(
+                    leading: Icon(tx['icon'], color: tx['color']),
+                    title: Text(tx['title']),
+                    subtitle: Text(tx['category']),
+                    trailing: Text(
+                      tx['amount'],
+                      style: TextStyle(
+                        color: tx['isIncome'] ? Colors.green : Colors.red,
+                        fontWeight: FontWeight.bold,
+                      ),
+                    ),
+                  );
+                },
               ),
             ),
           ],
