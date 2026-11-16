@@ -14,44 +14,107 @@ class ExpenseManagerApp extends StatelessWidget {
       title: 'Expense Manager',
       theme: ThemeData(
         primarySwatch: Colors.blue,
-        scaffoldBackgroundColor: Colors.white,
+        scaffoldBackgroundColor: const Color(0xFFF8F9FA),
       ),
-      home: const EditTransactionScreen(),
+      home: const DashboardScreen(),
     );
   }
 }
 
-class EditTransactionScreen extends StatefulWidget {
-  const EditTransactionScreen({super.key});
+class DashboardScreen extends StatefulWidget {
+  const DashboardScreen({super.key});
 
   @override
-  State<EditTransactionScreen> createState() => _EditTransactionScreenState();
+  State<DashboardScreen> createState() => _DashboardScreenState();
 }
 
-class _EditTransactionScreenState extends State<EditTransactionScreen> {
-  bool isExpense = true;
+class _DashboardScreenState extends State<DashboardScreen> {
+  int _selectedIndex = 0;
+  bool _isBalanceVisible = true;
 
-  // Các Controller được điền sẵn dữ liệu cũ để người dùng chỉnh sửa
-  final _categoryController = TextEditingController(text: 'Ăn uống');
-  final _amountController = TextEditingController(text: '100.000');
-  final _dateController = TextEditingController(text: '12/04/2025');
-  final _noteController = TextEditingController(text: 'Ăn trưa');
+  // Dùng kiểu suy luận tự động của Dart để tránh hoàn toàn lỗi ký tự < >
+  final transactions = [
+    {
+      'title': 'Ăn trưa',
+      'category': 'Ăn uống',
+      'date': '03/09/2024',
+      'amount': '-50.000 đ',
+      'isIncome': false,
+      'icon': Icons.restaurant,
+      'color': Colors.orange
+    },
+    {
+      'title': 'Xăng xe',
+      'category': 'Di chuyển',
+      'date': '03/09/2024',
+      'amount': '-100.000 đ',
+      'isIncome': false,
+      'icon': Icons.directions_car,
+      'color': Colors.blue
+    },
+    {
+      'title': 'Lương tháng 9',
+      'category': 'Thu nhập',
+      'date': '01/09/2024',
+      'amount': '+8.000.000 đ',
+      'isIncome': true,
+      'icon': Icons.account_balance_wallet,
+      'color': Colors.green
+    },
+    {
+      'title': 'Mua sắm',
+      'category': 'Mua sắm',
+      'date': '31/08/2024',
+      'amount': '-300.000 đ',
+      'isIncome': false,
+      'icon': Icons.shopping_bag,
+      'color': Colors.purple
+    },
+    {
+      'title': 'Học phí',
+      'category': 'Giáo dục',
+      'date': '30/08/2024',
+      'amount': '-500.000 đ',
+      'isIncome': false,
+      'icon': Icons.school,
+      'color': Colors.teal
+    },
+  ];
 
   @override
   Widget build(BuildContext context) {
     return Scaffold(
       appBar: AppBar(
-        backgroundColor: Colors.white,
+        backgroundColor: const Color(0xFFF8F9FA),
         elevation: 0,
         leading: IconButton(
-          icon: const Icon(Icons.arrow_back, color: Colors.black),
+          icon: const Icon(Icons.menu, color: Colors.black87),
           onPressed: () {},
         ),
         title: const Text(
-          'Sửa giao dịch',
-          style: TextStyle(color: Colors.black, fontWeight: FontWeight.bold),
+          'Quản lý thu chi',
+          style: TextStyle(color: Colors.black87, fontWeight: FontWeight.bold, fontSize: 18),
         ),
-        centerTitle: true,
+        centerTitle: false,
+        actions: [
+          Stack(
+            children: [
+              IconButton(
+                icon: const Icon(Icons.notifications_none, color: Colors.black87),
+                onPressed: () {},
+              ),
+              Positioned(
+                right: 8,
+                top: 8,
+                child: Container(
+                  padding: const EdgeInsets.all(4),
+                  decoration: const BoxDecoration(color: Colors.red, shape: BoxShape.circle),
+                  child: const Text('3', style: TextStyle(color: Colors.white, fontSize: 10, fontWeight: FontWeight.bold)),
+                ),
+              ),
+            ],
+          ),
+        ],
       ),
       body: SingleChildScrollView(
         padding: const EdgeInsets.all(16.0),
@@ -59,116 +122,212 @@ class _EditTransactionScreenState extends State<EditTransactionScreen> {
           crossAxisAlignment: CrossAxisAlignment.start,
           children: [
             Container(
+              padding: const EdgeInsets.all(20),
               decoration: BoxDecoration(
-                color: Colors.grey[100],
-                borderRadius: BorderRadius.circular(12),
+                gradient: const LinearGradient(
+                  colors: [Color(0xFF2563EB), Color(0xFF1D4ED8)],
+                  begin: Alignment.topLeft,
+                  end: Alignment.bottomRight,
+                ),
+                borderRadius: BorderRadius.circular(20),
+                boxShadow: [
+                  BoxShadow(color: Colors.blue.withOpacity(0.3), blurRadius: 10, offset: const Offset(0, 5)),
+                ],
               ),
-              child: Row(
+              child: Column(
+                crossAxisAlignment: CrossAxisAlignment.start,
                 children: [
-                  Expanded(
-                    child: GestureDetector(
-                      onTap: () => setState(() => isExpense = true),
-                      child: Container(
-                        padding: const EdgeInsets.symmetric(vertical: 12),
-                        decoration: BoxDecoration(
-                          color: isExpense ? const Color(0xFFFF5252) : Colors.transparent,
-                          borderRadius: BorderRadius.circular(12),
-                        ),
-                        alignment: Alignment.center,
-                        child: Text(
-                          'Chi tiêu',
-                          style: TextStyle(
-                            color: isExpense ? Colors.white : Colors.black54,
-                            fontWeight: FontWeight.bold,
+                  Row(
+                    mainAxisAlignment: MainAxisAlignment.spaceBetween,
+                    children: [
+                      Row(
+                        children: [
+                          const Text('SỐ DƯ HIỆN TẠI', style: TextStyle(color: Colors.white70, fontSize: 12, fontWeight: FontWeight.bold, letterSpacing: 1)),
+                          const SizedBox(width: 8),
+                          GestureDetector(
+                            onTap: () => setState(() => _isBalanceVisible = !_isBalanceVisible),
+                            child: Icon(_isBalanceVisible ? Icons.visibility_outlined : Icons.visibility_off_outlined, color: Colors.white70, size: 18),
                           ),
-                        ),
+                        ],
                       ),
-                    ),
+                      const Icon(Icons.account_balance_wallet, color: Colors.white24, size: 40),
+                    ],
                   ),
-                  Expanded(
-                    child: GestureDetector(
-                      onTap: () => setState(() => isExpense = false),
-                      child: Container(
-                        padding: const EdgeInsets.symmetric(vertical: 12),
-                        decoration: BoxDecoration(
-                          color: !isExpense ? Colors.white : Colors.transparent,
-                          borderRadius: BorderRadius.circular(12),
-                        ),
-                        alignment: Alignment.center,
-                        child: Text(
-                          'Thu nhập',
-                          style: TextStyle(
-                            color: !isExpense ? Colors.black : Colors.black54,
-                            fontWeight: FontWeight.bold,
-                          ),
-                        ),
-                      ),
+                  const SizedBox(height: 12),
+                  Text(
+                    _isBalanceVisible ? '5.000.000 đ' : '••••••••',
+                    style: const TextStyle(color: Colors.white, fontSize: 28, fontWeight: FontWeight.bold),
+                  ),
+                  const SizedBox(height: 16),
+                  Center(
+                    child: Row(
+                      mainAxisSize: MainAxisSize.min,
+                      children: [
+                        Container(width: 16, height: 4, decoration: BoxDecoration(color: Colors.white, borderRadius: BorderRadius.circular(2))),
+                        const SizedBox(width: 4),
+                        Container(width: 6, height: 6, decoration: BoxDecoration(color: Colors.white54, shape: BoxShape.circle)),
+                        const SizedBox(width: 4),
+                        Container(width: 6, height: 6, decoration: BoxDecoration(color: Colors.white54, shape: BoxShape.circle)),
+                        const SizedBox(width: 4),
+                        Container(width: 6, height: 6, decoration: BoxDecoration(color: Colors.white54, shape: BoxShape.circle)),
+                      ],
                     ),
                   ),
                 ],
               ),
             ),
-            const SizedBox(height: 24),
-            const Text('Danh mục', style: TextStyle(fontWeight: FontWeight.bold, color: Colors.black87)),
-            const SizedBox(height: 8),
-            TextField(
-              controller: _categoryController,
-              decoration: InputDecoration(
-                hintText: 'Nhập tên danh mục tùy ý',
-                prefixIcon: const Icon(Icons.category_outlined, color: Colors.red),
-                border: OutlineInputBorder(borderRadius: BorderRadius.circular(12)),
-              ),
-            ),
             const SizedBox(height: 16),
-            const Text('Số tiền', style: TextStyle(fontWeight: FontWeight.bold, color: Colors.black87)),
-            const SizedBox(height: 8),
-            TextField(
-              controller: _amountController,
-              keyboardType: TextInputType.number,
-              decoration: InputDecoration(
-                hintText: 'Nhập số tiền',
-                suffixText: 'đ',
-                border: OutlineInputBorder(borderRadius: BorderRadius.circular(12)),
-              ),
-            ),
-            const SizedBox(height: 16),
-            const Text('Ngày giao dịch', style: TextStyle(fontWeight: FontWeight.bold, color: Colors.black87)),
-            const SizedBox(height: 8),
-            TextField(
-              controller: _dateController,
-              decoration: InputDecoration(
-                suffixIcon: const Icon(Icons.calendar_today_outlined, color: Colors.grey),
-                border: OutlineInputBorder(borderRadius: BorderRadius.circular(12)),
-              ),
-            ),
-            const SizedBox(height: 16),
-            const Text('Ghi chú', style: TextStyle(fontWeight: FontWeight.bold, color: Colors.black87)),
-            const SizedBox(height: 8),
-            TextField(
-              controller: _noteController,
-              maxLines: 3,
-              decoration: InputDecoration(
-                hintText: 'Nhập ghi chú (tùy chọn)',
-                border: OutlineInputBorder(borderRadius: BorderRadius.circular(12)),
-              ),
-            ),
-            const SizedBox(height: 32),
-            SizedBox(
-              width: double.infinity,
-              height: 56,
-              child: ElevatedButton(
-                onPressed: () {},
-                style: ElevatedButton.styleFrom(
-                  backgroundColor: const Color(0xFF1E88E5),
-                  shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(12)),
-                  elevation: 0,
+            Row(
+              children: [
+                Expanded(
+                  child: Container(
+                    padding: const EdgeInsets.all(16),
+                    decoration: BoxDecoration(
+                      color: Colors.white,
+                      borderRadius: BorderRadius.circular(16),
+                      border: Border.all(color: Colors.grey.shade200),
+                    ),
+                    child: Row(
+                      children: [
+                        Container(
+                          padding: const EdgeInsets.all(8),
+                          decoration: BoxDecoration(color: Colors.green.shade50, shape: BoxShape.circle),
+                          child: const Icon(Icons.arrow_downward, color: Colors.green, size: 20),
+                        ),
+                        const SizedBox(width: 12),
+                        const Column(
+                          crossAxisAlignment: CrossAxisAlignment.start,
+                          children: [
+                            Text('TỔNG THU NHẬP', style: TextStyle(color: Colors.grey, fontSize: 10, fontWeight: FontWeight.bold)),
+                            SizedBox(height: 4),
+                            Text('8.000.000 đ', style: TextStyle(color: Colors.green, fontWeight: FontWeight.bold, fontSize: 14)),
+                          ],
+                        ),
+                      ],
+                    ),
+                  ),
                 ),
-                child: const Text('Lưu', style: TextStyle(fontSize: 16, fontWeight: FontWeight.bold, color: Colors.white)),
-              ),
+                const SizedBox(width: 12),
+                Expanded(
+                  child: Container(
+                    padding: const EdgeInsets.all(16),
+                    decoration: BoxDecoration(
+                      color: Colors.white,
+                      borderRadius: BorderRadius.circular(16),
+                      border: Border.all(color: Colors.grey.shade200),
+                    ),
+                    child: Row(
+                      children: [
+                        Container(
+                          padding: const EdgeInsets.all(8),
+                          decoration: BoxDecoration(color: Colors.red.shade50, shape: BoxShape.circle),
+                          child: const Icon(Icons.arrow_upward, color: Colors.red, size: 20),
+                        ),
+                        const SizedBox(width: 12),
+                        const Column(
+                          crossAxisAlignment: CrossAxisAlignment.start,
+                          children: [
+                            Text('TỔNG CHI TIÊU', style: TextStyle(color: Colors.grey, fontSize: 10, fontWeight: FontWeight.bold)),
+                            SizedBox(height: 4),
+                            Text('3.000.000 đ', style: TextStyle(color: Colors.red, fontWeight: FontWeight.bold, fontSize: 14)),
+                          ],
+                        ),
+                      ],
+                    ),
+                  ),
+                ),
+              ],
+            ),
+            const SizedBox(height: 24),
+            Row(
+              mainAxisAlignment: MainAxisAlignment.spaceBetween,
+              children: [
+                const Text('Giao dịch gần đây', style: TextStyle(fontSize: 16, fontWeight: FontWeight.bold, color: Colors.black87)),
+                TextButton(
+                  onPressed: () {},
+                  child: const Text('Xem tất cả', style: TextStyle(color: Colors.blue, fontWeight: FontWeight.w600)),
+                ),
+              ],
+            ),
+            const SizedBox(height: 8),
+            ListView.builder(
+              shrinkWrap: true,
+              physics: const NeverScrollableScrollPhysics(),
+              itemCount: transactions.length,
+              itemBuilder: (context, index) {
+                final tx = transactions[index];
+                return Container(
+                  margin: const EdgeInsets.only(bottom: 12),
+                  padding: const EdgeInsets.all(12),
+                  decoration: BoxDecoration(
+                    color: Colors.white,
+                    borderRadius: BorderRadius.circular(16),
+                    border: Border.all(color: Colors.grey.shade100),
+                  ),
+                  child: Row(
+                    children: [
+                      Container(
+                        padding: const EdgeInsets.all(10),
+                        decoration: BoxDecoration(
+                          color: (tx['color'] as Color).withOpacity(0.1),
+                          borderRadius: BorderRadius.circular(12),
+                        ),
+                        child: Icon(tx['icon'] as IconData, color: tx['color'] as Color, size: 22),
+                      ),
+                      const SizedBox(width: 12),
+                      Expanded(
+                        child: Column(
+                          crossAxisAlignment: CrossAxisAlignment.start,
+                          children: [
+                            Text(tx['title'] as String, style: const TextStyle(fontWeight: FontWeight.bold, fontSize: 15, color: Colors.black87)),
+                            const SizedBox(height: 2),
+                            Text(tx['category'] as String, style: const TextStyle(color: Colors.grey, fontSize: 12)),
+                          ],
+                        ),
+                      ),
+                      Column(
+                        crossAxisAlignment: CrossAxisAlignment.end,
+                        children: [
+                          Text(
+                            tx['amount'] as String,
+                            style: TextStyle(
+                              fontWeight: FontWeight.bold,
+                              fontSize: 14,
+                              color: (tx['isIncome'] as bool) ? Colors.green : Colors.red,
+                            ),
+                          ),
+                          const SizedBox(height: 2),
+                          Text(tx['date'] as String, style: const TextStyle(color: Colors.grey, fontSize: 11)),
+                        ],
+                      ),
+                    ],
+                  ),
+                );
+              },
             ),
           ],
         ),
       ),
+      bottomNavigationBar: BottomNavigationBar(
+        currentIndex: _selectedIndex,
+        onTap: (index) => setState(() => _selectedIndex = index),
+        selectedItemColor: Colors.blue,
+        unselectedItemColor: Colors.grey,
+        backgroundColor: Colors.white,
+        type: BottomNavigationBarType.fixed,
+        items: const [
+          BottomNavigationBarItem(icon: Icon(Icons.home), label: 'Trang chủ'),
+          BottomNavigationBarItem(icon: Icon(Icons.receipt_long), label: 'Giao dịch'),
+          BottomNavigationBarItem(icon: Icon(Icons.bar_chart), label: 'Thống kê'),
+        ],
+      ),
+      floatingActionButton: FloatingActionButton(
+        onPressed: () {},
+        backgroundColor: Colors.blue,
+        shape: const CircleBorder(),
+        child: const Icon(Icons.add, color: Colors.white, size: 28),
+      ),
+      floatingActionButtonLocation: FloatingActionButtonLocation.centerDocked,
     );
   }
 }
