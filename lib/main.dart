@@ -125,7 +125,8 @@ class _MainNavigationScreenState extends State<MainNavigationScreen> {
         shape: const CircleBorder(),
         child: const Icon(Icons.add, color: Colors.white, size: 28),
       ),
-      floatingActionButtonLocation: FloatingActionButtonLocation.centerDocked,
+      // Đã dời dấu cộng sang góc phải bằng endFloat
+      floatingActionButtonLocation: FloatingActionButtonLocation.endFloat,
     );
   }
 }
@@ -144,7 +145,6 @@ class DashboardTab extends StatelessWidget {
 
   @override
   Widget build(BuildContext context) {
-    // Tính toán số dư động
     double initialBalance = 5000000;
     double totalIncome = 0;
     double totalExpense = 0;
