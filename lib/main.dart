@@ -30,6 +30,7 @@ class MainNavigationScreen extends StatefulWidget {
 
 class _MainNavigationScreenState extends State<MainNavigationScreen> {
   int _currentIndex = 0;
+  bool _isBalanceVisible = true;
 
   // Danh sách giao dịch dùng chung cho toàn ứng dụng
   final List transactions = [
@@ -68,12 +69,25 @@ class _MainNavigationScreenState extends State<MainNavigationScreen> {
     });
   }
 
+  void _deleteTransaction(int index) {
+    setState(() {
+      transactions.removeAt(index);
+    });
+  }
+
   @override
   Widget build(BuildContext context) {
     final List screens = [
-      DashboardTab(transactions: transactions),
-      TransactionsTab(transactions: transactions),
-      StatisticsTab(transactions: transactions), // Truyền danh sách vào màn hình Thống kê
+      DashboardTab(
+        transactions: transactions,
+        isBalanceVisible: _isBalanceVisible,
+        onToggleVisibility: () => setState(() => _isBalanceVisible = !_isBalanceVisible),
+      ),
+      TransactionsTab(
+        transactions: transactions,
+        onDeleteTransaction: _deleteTransaction,
+      ),
+      StatisticsTab(transactions: transactions),
     ];
 
     return Scaffold(
@@ -118,10 +132,35 @@ class _MainNavigationScreenState extends State<MainNavigationScreen> {
 
 class DashboardTab extends StatelessWidget {
   final List transactions;
-  const DashboardTab({super.key, required this.transactions});
+  final bool isBalanceVisible;
+  final VoidCallback onToggleVisibility;
+
+  const DashboardTab({
+    super.key,
+    required this.transactions,
+    required this.isBalanceVisible,
+    required this.onToggleVisibility,
+  });
 
   @override
   Widget build(BuildContext context) {
+    // Tính toán số dư động
+    double initialBalance = 5000000;
+    double totalIncome = 0;
+    double totalExpense = 0;
+
+    for (var tx in transactions) {
+      String rawAmount = tx['amount'].toString().replaceAll(RegExp(r'[^0-9]'), '');
+      double val = double.tryParse(rawAmount) ?? 0;
+      if (tx['isIncome'] == true) {
+        totalIncome += val;
+      } else {
+        totalExpense += val;
+      }
+    }
+
+    double currentBalance = initialBalance + totalIncome - totalExpense;
+
     return Scaffold(
       appBar: AppBar(
         backgroundColor: const Color(0xFFF8F9FA),
@@ -139,12 +178,24 @@ class DashboardTab extends StatelessWidget {
                 gradient: const LinearGradient(colors: [Color(0xFF2563EB), Color(0xFF1D4ED8)]),
                 borderRadius: BorderRadius.circular(20),
               ),
-              child: const Column(
+              child: Column(
                 crossAxisAlignment: CrossAxisAlignment.start,
                 children: [
-                  Text('SỐ DƯ HIỆN TẠI', style: TextStyle(color: Colors.white70, fontSize: 12, fontWeight: FontWeight.bold)),
-                  SizedBox(height: 12),
-                  Text('5.000.000 đ', style: TextStyle(color: Colors.white, fontSize: 28, fontWeight: FontWeight.bold)),
+                  Row(
+                    mainAxisAlignment: MainAxisAlignment.spaceBetween,
+                    children: [
+                      const Text('SỐ DƯ HIỆN TẠI', style: TextStyle(color: Colors.white70, fontSize: 12, fontWeight: FontWeight.bold)),
+                      GestureDetector(
+                        onTap: onToggleVisibility,
+                        child: Icon(isBalanceVisible ? Icons.visibility_outlined : Icons.visibility_off_outlined, color: Colors.white70, size: 18),
+                      ),
+                    ],
+                  ),
+                  const SizedBox(height: 12),
+                  Text(
+                    isBalanceVisible ? '$currentBalance đ' : '••••••••',
+                    style: const TextStyle(color: Colors.white, fontSize: 26, fontWeight: FontWeight.bold),
+                  ),
                 ],
               ),
             ),
@@ -217,7 +268,9 @@ class DashboardTab extends StatelessWidget {
 
 class TransactionsTab extends StatelessWidget {
   final List transactions;
-  const TransactionsTab({super.key, required this.transactions});
+  final Function(int) onDeleteTransaction;
+
+  const TransactionsTab({super.key, required this.transactions, required this.onDeleteTransaction});
 
   @override
   Widget build(BuildContext context) {
@@ -235,51 +288,70 @@ class TransactionsTab extends StatelessWidget {
         itemCount: transactions.length,
         itemBuilder: (context, index) {
           final tx = transactions[index];
-          return Container(
-            margin: const EdgeInsets.only(bottom: 12),
-            padding: const EdgeInsets.all(12),
-            decoration: BoxDecoration(
-              color: Colors.white,
-              borderRadius: BorderRadius.circular(16),
-              border: Border.all(color: Colors.grey.shade100),
+          return Dismissible(
+            key: Key(tx.toString() + index.toString()),
+            direction: DismissDirection.endToStart,
+            background: Container(
+              alignment: Alignment.centerRight,
+              padding: const EdgeInsets.symmetric(horizontal: 20),
+              decoration: BoxDecoration(
+                color: Colors.red,
+                borderRadius: BorderRadius.circular(16),
+              ),
+              child: const Icon(Icons.delete, color: Colors.white),
             ),
-            child: Row(
-              children: [
-                Container(
-                  padding: const EdgeInsets.all(10),
-                  decoration: BoxDecoration(
-                    color: (tx['color'] as Color).withOpacity(0.1),
-                    borderRadius: BorderRadius.circular(12),
+            onDismissed: (direction) {
+              onDeleteTransaction(index);
+              ScaffoldMessenger.of(context).showSnackBar(
+                const SnackBar(content: Text('Đã xóa giao dịch')),
+              );
+            },
+            child: Container(
+              margin: const EdgeInsets.only(bottom: 12),
+              padding: const EdgeInsets.all(12),
+              decoration: BoxDecoration(
+                color: Colors.white,
+                borderRadius: BorderRadius.circular(16),
+                border: Border.all(color: Colors.grey.shade100),
+              ),
+              child: Row(
+                children: [
+                  Container(
+                    padding: const EdgeInsets.all(10),
+                    decoration: BoxDecoration(
+                      color: (tx['color'] as Color).withOpacity(0.1),
+                      borderRadius: BorderRadius.circular(12),
+                    ),
+                    child: Icon(tx['icon'] as IconData, color: tx['color'] as Color, size: 22),
                   ),
-                  child: Icon(tx['icon'] as IconData, color: tx['color'] as Color, size: 22),
-                ),
-                const SizedBox(width: 12),
-                Expanded(
-                  child: Column(
-                    crossAxisAlignment: CrossAxisAlignment.start,
+                  const SizedBox(width: 12),
+                  Expanded(
+                    child: Column(
+                      crossAxisAlignment: CrossAxisAlignment.start,
+                      children: [
+                        Text(tx['title'] as String, style: const TextStyle(fontWeight: FontWeight.bold, fontSize: 15, color: Colors.black87)),
+                        const SizedBox(height: 2),
+                        Text(tx['category'] as String, style: const TextStyle(color: Colors.grey, fontSize: 12)),
+                      ],
+                    ),
+                  ),
+                  Column(
+                    crossAxisAlignment: CrossAxisAlignment.end,
                     children: [
-                      Text(tx['title'] as String, style: const TextStyle(fontWeight: FontWeight.bold, fontSize: 15, color: Colors.black87)),
+                      Text(
+                        tx['amount'] as String,
+                        style: TextStyle(
+                          fontWeight: FontWeight.bold,
+                          fontSize: 14,
+                          color: (tx['isIncome'] as bool) ? Colors.green : Colors.red,
+                        ),
+                      ),
                       const SizedBox(height: 2),
-                      Text(tx['category'] as String, style: const TextStyle(color: Colors.grey, fontSize: 12)),
+                      Text(tx['date'] as String, style: const TextStyle(color: Colors.grey, fontSize: 11)),
                     ],
                   ),
-                ),
-                Column(
-                  crossAxisAlignment: CrossAxisAlignment.end,
-                  children: [
-                    Text(
-                      tx['amount'] as String,
-                      style: TextStyle(
-                        fontWeight: FontWeight.bold,
-                        fontSize: 14,
-                        color: (tx['isIncome'] as bool) ? Colors.green : Colors.red,
-                      ),
-                    ),
-                    const SizedBox(height: 2),
-                    Text(tx['date'] as String, style: const TextStyle(color: Colors.grey, fontSize: 11)),
-                  ],
-                ),
-              ],
+                ],
+              ),
             ),
           );
         },
@@ -288,14 +360,12 @@ class TransactionsTab extends StatelessWidget {
   }
 }
 
-// 3. Tab Thống kê động dựa trên dữ liệu thật
 class StatisticsTab extends StatelessWidget {
   final List transactions;
   const StatisticsTab({super.key, required this.transactions});
 
   @override
   Widget build(BuildContext context) {
-    // Tính toán tổng thu và tổng chi dựa trên danh sách giao dịch
     double totalIncome = 0;
     double totalExpense = 0;
 
